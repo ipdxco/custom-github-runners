@@ -13,9 +13,12 @@ jobs:
     name: Run
     runs-on: [self-hosted, linux, x64, kubo]
     steps:
-      - run: aws --version
-      - id: prefix
-        run: echo "prefix=$(aws sts get-caller-identity | jq .Arn | grep -oP '(?<=/).+(?=-runner-role/)')" > $GITHUB_OUTPUT
       - run: mkdir website && echo "<html><body>Hello</body></html>" > website/index.html
-      - run: aws s3 cp website/index.html s3://tf-aws-gh-runner/${{ steps.prefix.outputs.prefix }}/${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/index.html --acl public-read
-      - run: echo "url=https://tf-aws-gh-runner.s3.amazonaws.com/${{ steps.prefix.outputs.prefix }}/${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/index.html"
+      - uses: pl-strflt/tf-aws-gh-runner/.github/actions/upload-artifact@kubo
+        with:
+          source: website
+      - uses: pl-strflt/tf-aws-gh-runner/.github/actions/download-artifact@kubo
+        with:
+          source: website/
+          destination: website2
+      - run: ls -laR
