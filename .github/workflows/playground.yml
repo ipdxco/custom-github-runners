@@ -2,11 +2,16 @@ name: Playground
 
 on:
   workflow_dispatch:
+  push:
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   run:
     name: Run
     runs-on: [self-hosted, linux, x64, kubo]
     steps:
-      - run: echo 'Hello World!'
-        shell: bash
+      - run: aws --version
+      - run: aws sts get-caller-identity
