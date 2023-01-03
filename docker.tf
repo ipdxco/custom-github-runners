@@ -18,7 +18,7 @@ locals {
               uploadpurging:
                 enabled: false
               readonly:
-                enabled: true
+                enabled: false
           EOT
         },
         {
