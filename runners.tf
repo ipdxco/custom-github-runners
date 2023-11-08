@@ -11,7 +11,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runner"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -36,7 +36,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runner"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -61,7 +61,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runner"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -86,7 +86,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runner"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -112,7 +112,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runneradmin"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -138,7 +138,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runneradmin"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -164,7 +164,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runner"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -190,7 +190,7 @@ locals {
       ami_owners = ["642361402189"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
-      enable_runner_detailed_monitoring = true
+      enable_runner_detailed_monitoring = false
       runner_run_as = "runneradmin"
       block_device_mappings = [{
         device_name           = "/dev/sda1"
@@ -370,8 +370,8 @@ module "runners" {
     "libp2p/rust-libp2p",
     "libp2p/test-plans",
     "pl-strflt/tf-aws-gh-runner",
-    "quic-go/quic-go",
-    "protocol/badbits.dwebops.pub"
+    "protocol/badbits.dwebops.pub",
+    "quic-go/quic-go"
   ])
 
   logging_retention_in_days = 30
