@@ -34,12 +34,14 @@ runs:
         const callerIdentity = await exec.getExecOutput('aws sts get-caller-identity');
         const arn = JSON.parse(callerIdentity.stdout).Arn;
         const prefix = `${arn.match(/\/(.+)-runner-role\//)[1]}/docker/cache/v0/docker/registry/v2/`;
+        const buckets = await exec.getExecOutput('aws s3api list-buckets');
+        const bucket = JSON.parse(buckets.stdout).Buckets[0].Name;
 
         const name = process.env.INPUTS_NAME || process.env.GITHUB_REPOSITORY
 
         return {
-          to: `type=s3,mode=max,prefix=${prefix},bucket=tf-aws-gh-runner,region=us-east-1,name=${name}`,
-          from: `type=s3,prefix=${prefix},bucket=tf-aws-gh-runner,region=us-east-1,name=${name}`,
+          to: `type=s3,mode=max,prefix=${prefix},bucket=${bucket},region=us-east-1,name=${name}`,
+          from: `type=s3,prefix=${prefix},bucket=${bucket},region=us-east-1,name=${name}`,
           instance: instance.stdout
         }
       result-encoding: json

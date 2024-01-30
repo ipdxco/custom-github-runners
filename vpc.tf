@@ -8,7 +8,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.1.0"
 
-  name = "vpc-tf-aws-gh-runner"
+  name = "vpc-${var.name}"
   cidr = "10.0.0.0/16"
 
   # NOTE: modifying azs will force a replacement of quite a few resources

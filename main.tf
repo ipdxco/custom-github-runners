@@ -1,12 +1,17 @@
-terraform {
-  backend "s3" {
-    # account_id = "642361402189"
-    region               = "us-east-1"
-    bucket               = "tf-aws-gh-runner"
-    key                  = "terraform.tfstate"
-    dynamodb_table       = "tf-aws-gh-runner"
-  }
+# terraform init
+# export AWS_ACCESS_KEY_ID=
+# export AWS_SECRET_ACCESS_KEY=
+# export AWS_REGION=
+# export TF_VAR_name=
+# export TF_VAR_github_app_key_base64=
+# export TF_VAR_github_app_id=
+# export TF_VAR_github_webhook_secret=
+# export TF_VAR_email=
+# export TF_VAR_repository_white_list=
+# export TF_VAR_runner_white_list=
+# terraform apply
 
+terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -25,12 +30,14 @@ terraform {
 
 locals {
   tags = {
-    Name = "Terraform AWS GitHub Runner"
-    Url  = "https://github.com/pl-strflt/tf-aws-gh-runner"
+    Name = "Custom GitHub Runners"
+    Url  = "https://github.com/ipdxco/custom-github-runners"
   }
 }
 
 provider "aws" {}
+
+variable "name" {}
 
 variable "github_app_key_base64" {}
 
@@ -40,18 +47,26 @@ variable "github_webhook_secret" {}
 
 variable "email" {}
 
+variable "repository_white_list" {
+  type = list(string)
+}
+
+variable "runner_white_list" {
+  type = list(string)
+}
+
 data "aws_region" "default" {}
 
-data "aws_s3_bucket" "tf-aws-gh-runner" {
-  bucket = "tf-aws-gh-runner"
+data "aws_s3_bucket" "custom-github-runners" {
+  bucket = var.name
 }
 
 data "aws_caller_identity" "current" {}
 
 # RETENTION
 
-# resource "aws_s3_bucket_lifecycle_configuration" "tf-aws-gh-runner_v2" {
-#   bucket = data.aws_s3_bucket.tf-aws-gh-runner.id
+# resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners_v2" {
+#   bucket = data.aws_s3_bucket.custom-github-runners.id
 
 #   # artifacts.tf
 #   dynamic "rule" {
@@ -70,8 +85,8 @@ data "aws_caller_identity" "current" {}
 #   }
 # }
 
-resource "aws_s3_bucket_lifecycle_configuration" "tf-aws-gh-runner" {
-  bucket = data.aws_s3_bucket.tf-aws-gh-runner.id
+resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners" {
+  bucket = data.aws_s3_bucket.custom-github-runners.id
 
   # artifacts.tf
   dynamic "rule" {

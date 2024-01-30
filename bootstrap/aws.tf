@@ -1,6 +1,7 @@
 # terraform init
 # export AWS_ACCESS_KEY_ID=
 # export AWS_SECRET_ACCESS_KEY=
+# export TF_VAR_name=
 # terraform apply
 
 terraform {
@@ -17,26 +18,41 @@ provider "aws" {
   region = "us-east-1"
 }
 
+variable "name" {
+  description = "The name to use for S3 bucket, DynamoDB table and IAM users."
+  type        = string
+}
+
 resource "aws_iam_service_linked_role" "spot" {
   aws_service_name = "spot.amazonaws.com"
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket = "tf-aws-gh-runner"
+  bucket = var.name
 
   tags = {
-    Name = "Terraform AWS GitHub Runner"
-    Url  = "https://github.com/pl-strflt/tf-aws-gh-runner"
+    Name = "Custom GitHub Runners"
+    Url  = "https://github.com/ipdxco/custom-github-runners"
+  }
+}
+
+resource "aws_s3_bucket_ownership_controls" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
   }
 }
 
 resource "aws_s3_bucket_acl" "this" {
+    depends_on = [ aws_s3_bucket_ownership_controls.this ]
+
   bucket = aws_s3_bucket.this.id
   acl    = "private"
 }
 
 resource "aws_dynamodb_table" "this" {
-  name         = "tf-aws-gh-runner"
+  name         = var.name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -46,17 +62,17 @@ resource "aws_dynamodb_table" "this" {
   }
 
   tags = {
-    Name = "Terraform AWS GitHub Runner"
-    Url  = "https://github.com/pl-strflt/tf-aws-gh-runner"
+    Name = "Custom GitHub Runners"
+    Url  = "https://github.com/ipdxco/custom-github-runners"
   }
 }
 
 resource "aws_iam_user" "this" {
-  name = "tf-aws-gh-runner"
+  name = var.name
 
   tags = {
-    Name = "Terraform AWS GitHub Runner"
-    Url  = "https://github.com/pl-strflt/tf-aws-gh-runner"
+    Name = "Custom GitHub Runners"
+    Url  = "https://github.com/ipdxco/custom-github-runners"
   }
 }
 
@@ -83,7 +99,7 @@ data "aws_iam_policy_document" "this" {
 }
 
 resource "aws_iam_user_policy" "this" {
-  name = "tf-aws-gh-runner"
+  name = var.name
   user = "${aws_iam_user.this.name}"
 
   policy = "${data.aws_iam_policy_document.this.json}"

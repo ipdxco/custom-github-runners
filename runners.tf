@@ -7,8 +7,8 @@ locals {
       instance_types = ["c5.4xlarge"]
       runners_maximum_count = 50
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-202307110949-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -32,8 +32,8 @@ locals {
       instance_types = ["c5.2xlarge"]
       runners_maximum_count = 50
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-202307110949-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -57,8 +57,8 @@ locals {
       instance_types = ["c5.xlarge", "m5.xlarge"]
       runners_maximum_count = 50
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-202307110949-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -82,8 +82,8 @@ locals {
       instance_types = ["c5.large", "m5.large"]
       runners_maximum_count = 100
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-202307110949-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -104,12 +104,11 @@ locals {
       runner_extra_labels = "playground"
       runner_os = "windows"
       runner_architecture = "x64"
-      repository_white_list = ["pl-strflt/tf-aws-gh-runner"]
       instance_types = ["c5.2xlarge"]
       runners_maximum_count = 20
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-windows-core-2022-202310200742-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-windows-core-2022-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -130,12 +129,11 @@ locals {
       runner_extra_labels = "playground"
       runner_os = "windows"
       runner_architecture = "x64"
-      repository_white_list = ["pl-strflt/tf-aws-gh-runner"]
       instance_types = ["c5.xlarge", "m5.xlarge"]
       runners_maximum_count = 20
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-windows-core-2022-202310200742-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-windows-core-2022-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -156,12 +154,11 @@ locals {
       runner_extra_labels = "playground"
       runner_os = "linux"
       runner_architecture = "x64"
-      repository_white_list = ["pl-strflt/tf-aws-gh-runner"]
       instance_types = ["c5.4xlarge"]
       runners_maximum_count = 1
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-202307110949-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -182,12 +179,11 @@ locals {
       runner_extra_labels = "playground"
       runner_os = "windows"
       runner_architecture = "x64"
-      repository_white_list = ["pl-strflt/tf-aws-gh-runner"]
       instance_types = ["c5.xlarge"]
       runners_maximum_count = 1
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-windows-core-2022-202310200742-default"], state = ["available"] }
-      ami_owners = ["642361402189"]
+      ami_filter = { name = ["github-runner-windows-core-2022-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
       enable_runner_detailed_monitoring = false
@@ -287,8 +283,6 @@ locals {
 
 #         log_level = "debug"
 
-#         repository_white_list = v.repository_white_list
-
 #         logging_retention_in_days = 30
 
 #         runner_boot_time_in_minutes = v.runner_os == "windows" ? 20 : 5
@@ -298,7 +292,7 @@ locals {
 # }
 
 module "runners" {
-  for_each = local.runner_configs
+  for_each = { for k, v in local.runner_configs : k => v if contains(var.runner_white_list, k) }
 
   source                          = "philips-labs/github-runner/aws"
   version                         = "3.6.1"
@@ -359,20 +353,7 @@ module "runners" {
 
   log_level = "debug"
 
-  repository_white_list = try(each.value.repository_white_list, [
-    "filecoin-project/builtin-actors",
-    "ipfs/boxo",
-    "ipfs/distributions",
-    "ipfs/kubo",
-    "ipni/storetheindex",
-    "libp2p/go-libp2p",
-    "libp2p/js-libp2p",
-    "libp2p/rust-libp2p",
-    "libp2p/test-plans",
-    "pl-strflt/tf-aws-gh-runner",
-    "protocol/badbits.dwebops.pub",
-    "quic-go/quic-go"
-  ])
+  repository_white_list = var.repository_white_list
 
   logging_retention_in_days = 30
 

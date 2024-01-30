@@ -49,13 +49,13 @@ fi
 
 ## Configure docker registries
 
-docker_parameters=$(aws ssm get-parameters-by-path --path "/tf-aws-gh-runner/docker" --region "$region" --query "Parameters[*].{Name:Name,Value:Value}")
+docker_parameters=$(aws ssm get-parameters-by-path --path "/custom-github-runners/docker" --region "$region" --query "Parameters[*].{Name:Name,Value:Value}")
 echo "Retrieved docker parameters from AWS SSM ($docker_parameters)"
 
 ### Docker Registry Proxy
 
-docker_proxy=$(echo "$docker_parameters" | jq -r '.[] | select(.Name == "/tf-aws-gh-runner/docker/proxy_aws_lb_dns_name") | .Value')
-echo "Retrieved /tf-aws-gh-runner/docker/proxy_aws_lb_dns_name parameter - ($docker_proxy)"
+docker_proxy=$(echo "$docker_parameters" | jq -r '.[] | select(.Name == "/custom-github-runners/docker/proxy_aws_lb_dns_name") | .Value')
+echo "Retrieved /custom-github-runners/docker/proxy_aws_lb_dns_name parameter - ($docker_proxy)"
 
 sudo mkdir -p /etc/docker
 sudo echo '{' > /etc/docker/daemon.json
@@ -84,8 +84,8 @@ sudo service docker restart
 
 ### Go Modules Proxy
 
-goproxy=$(echo "$docker_parameters" | jq -r '.[] | select(.Name == "/tf-aws-gh-runner/docker/goproxy_aws_lb_dns_name") | .Value')
-echo "Retrieved /tf-aws-gh-runner/docker/goproxy_aws_lb_dns_name parameter - ($goproxy)"
+goproxy=$(echo "$docker_parameters" | jq -r '.[] | select(.Name == "/custom-github-runners/docker/goproxy_aws_lb_dns_name") | .Value')
+echo "Retrieved /custom-github-runners/docker/goproxy_aws_lb_dns_name parameter - ($goproxy)"
 
 export GOPROXY="http://$goproxy,direct"
 

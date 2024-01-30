@@ -1,6 +1,6 @@
 <div align="center">
 
-![runner-banner](https://github.com/pl-strflt/tf-aws-gh-runner/assets/6688074/ef8ede5b-a2fe-45c1-8564-66eeb8ba0fdb)
+![runner-banner](https://github.com/ipdxco/custom-github-runners/assets/6688074/ef8ede5b-a2fe-45c1-8564-66eeb8ba0fdb)
 
 # Customizable Self-hosted GitHub Runners
 
@@ -41,7 +41,7 @@ Follow these simple steps to integrate our runners into your repository:
       export TF_VAR_github_app_key_base64
       ```
     </details>
-2. Make sure to have the [pl-strflt/tf-aws-gh-runner](https://github.com/apps/pl-strflt-tf-aws-gh-runner) GitHub App installed within your organization.
+2. Make sure to have the [ipdxco/custom-github-runners](https://github.com/apps/custom-github-runners-by-ipdxco) GitHub App installed within your organization.
 3. Make sure the repository has access to the [`Default` runner group](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/using-self-hosted-runners-in-a-workflow#about-self-hosted-runner-groups) in your organization.
 4. Specify the self-hosted runner in your workflow by setting the `job.runs-on` parameter. For instance, `runs-on: [self-hosted, linux, x64, linux-x64-default]`, `runs-on: [self-hosted, windows, x64, windows-x64-default]`.
 

@@ -67,12 +67,12 @@ if ($enable_cloudwatch_agent -eq "true")
 }
 
 ## Configure docker registries
-$docker_parameters=$(aws ssm get-parameters-by-path --path "/tf-aws-gh-runner/docker" --region "$Region" --query "Parameters[*].{Name:Name,Value:Value}") | ConvertFrom-Json
+$docker_parameters=$(aws ssm get-parameters-by-path --path "/custom-github-runners/docker" --region "$Region" --query "Parameters[*].{Name:Name,Value:Value}") | ConvertFrom-Json
 echo "Retrieved docker parameters from AWS SSM"
 
 ### Docker Registry Proxy
-$docker_proxy=$docker_parameters.where( {$_.Name -eq "/tf-aws-gh-runner/docker/proxy_aws_lb_dns_name"} ).value
-echo "Retrieved /tf-aws-gh-runner/docker/proxy_aws_lb_dns_name parameter - ($docker_proxy)"
+$docker_proxy=$docker_parameters.where( {$_.Name -eq "/custom-github-runners/docker/proxy_aws_lb_dns_name"} ).value
+echo "Retrieved /custom-github-runners/docker/proxy_aws_lb_dns_name parameter - ($docker_proxy)"
 
 #### Docker Daemon Configuration
 $dockerConfigPath = "C:\ProgramData\Docker\config\daemon.json"
@@ -103,8 +103,8 @@ Restart-Service -Name "docker"
 
 ### Go Modules Proxy
 
-$goproxy=$docker_parameters.where( {$_.Name -eq "/tf-aws-gh-runner/docker/goproxy_aws_lb_dns_name"} ).value
-echo "Retrieved /tf-aws-gh-runner/docker/goproxy_aws_lb_dns_name parameter - ($goproxy)"
+$goproxy=$docker_parameters.where( {$_.Name -eq "/custom-github-runners/docker/goproxy_aws_lb_dns_name"} ).value
+echo "Retrieved /custom-github-runners/docker/goproxy_aws_lb_dns_name parameter - ($goproxy)"
 [Environment]::SetEnvironmentVariable("GOPROXY", "http://$goproxy,direct", "Machine")
 
 ## Configure the runner

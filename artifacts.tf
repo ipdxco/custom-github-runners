@@ -5,7 +5,7 @@
 # resource "aws_iam_role_policy" "artifacts_v2" {
 #   for_each = local.runners
 
-#   name = "tf-aws-gh-runner-${each.key}"
+#   name = "${var.name}-${each.key}"
 #   role = each.value.role_runner_id
 #   policy = jsonencode({
 #     Version = "2012-10-17"
@@ -19,7 +19,7 @@
 #           "s3:PutObjectAcl",
 #         ]
 #         Effect   = "Allow"
-#         Resource = ["${data.aws_s3_bucket.tf-aws-gh-runner.arn}/${each.key}/*"]
+#         Resource = ["${data.aws_s3_bucket.custom-github-runners.arn}/${each.key}/*"]
 #       },
 #       {
 #         Sid = "AllowLimitedList"
@@ -27,7 +27,7 @@
 #           "s3:ListBucket",
 #         ]
 #         Effect   = "Allow"
-#         Resource = ["${data.aws_s3_bucket.tf-aws-gh-runner.arn}"]
+#         Resource = ["${data.aws_s3_bucket.custom-github-runners.arn}"]
 #         Condition = {
 #           StringLike: {
 #             "s3:prefix" = [
@@ -43,7 +43,7 @@
 resource "aws_iam_role_policy" "artifacts" {
   for_each = local.legacy_runners
 
-  name = "tf-aws-gh-runner-${each.key}"
+  name = "${var.name}-${each.key}"
   role = each.value.role_runner_id
   policy = jsonencode({
     Version = "2012-10-17"
@@ -57,7 +57,7 @@ resource "aws_iam_role_policy" "artifacts" {
           "s3:PutObjectAcl",
         ]
         Effect   = "Allow"
-        Resource = ["${data.aws_s3_bucket.tf-aws-gh-runner.arn}/${each.key}/*"]
+        Resource = ["${data.aws_s3_bucket.custom-github-runners.arn}/${each.key}/*"]
       },
       {
         Sid = "AllowLimitedList"
@@ -65,7 +65,7 @@ resource "aws_iam_role_policy" "artifacts" {
           "s3:ListBucket",
         ]
         Effect   = "Allow"
-        Resource = ["${data.aws_s3_bucket.tf-aws-gh-runner.arn}"]
+        Resource = ["${data.aws_s3_bucket.custom-github-runners.arn}"]
         Condition = {
           StringLike: {
             "s3:prefix" = [

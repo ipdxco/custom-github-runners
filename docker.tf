@@ -3,7 +3,7 @@ locals {
     goproxy = {
       port = 3000
       image     = "gomods/athens@sha256:0f1547a80a2e034a96f1c9f3b652317834d3f2086b4011ec164a93fa16d23bdb"
-      s3_bucket = "tf-aws-gh-runner-docker-goproxy"
+      s3_bucket = "${var.name}-docker-goproxy"
       cpu = 4
       memory = 8
       environment = [
@@ -21,7 +21,7 @@ locals {
         },
         {
           name = "ATHENS_S3_BUCKET_NAME"
-          value = "tf-aws-gh-runner-docker-goproxy"
+          value = "${var.name}-docker-goproxy"
         },
         {
           name = "ATHENS_DOWNLOAD_MODE"
@@ -38,7 +38,7 @@ locals {
       # TODO: change to public ECR image; it'll require access to ECR on the exec role
       # WARN: Why edge instead of registry:2.8.1? https://github.com/distribution/distribution/issues/3645#issuecomment-1347430516
       image     = "distribution/distribution@sha256:43300dba89e7432db97365a4cb2918017ae8c08afb3d72fff0cb92db674bbc17"
-      s3_bucket = "tf-aws-gh-runner-docker-proxy"
+      s3_bucket = "${var.name}-docker-proxy"
       cpu = 1
       memory = 2
       environment = [
@@ -47,7 +47,7 @@ locals {
           value = <<-EOT
             s3:
               region: us-east-1
-              bucket: tf-aws-gh-runner-docker-proxy
+              bucket: ${var.name}-docker-proxy
               rootdirectory: /v0
             delete:
               enabled: false
@@ -64,7 +64,7 @@ locals {
           name = "REGISTRY_HTTP"
           value = <<-EOT
             addr: :5000
-            secret: tf-aws-gh-runner-docker-proxy-v0
+            secret: ${var.name}-docker-proxy-v0
           EOT
         },
         {
@@ -105,7 +105,7 @@ locals {
 # SG
 
 resource "aws_security_group" "docker_lb" {
-  name        = "tf-aws-gh-runner-docker-lb"
+  name        = "${var.name}-docker-lb"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -131,7 +131,7 @@ resource "aws_security_group" "docker_lb" {
 resource "aws_security_group" "docker" {
   for_each     = local.registries
 
-  name        = "tf-aws-gh-runner-docker-${each.key}"
+  name        = "${var.name}-docker-${each.key}"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
@@ -157,7 +157,7 @@ resource "aws_security_group" "docker" {
 resource "aws_lb" "docker" {
   for_each = local.registries
 
-  name               = "tf-aws-gh-runner-docker-${each.key}"
+  name               = "${each.key}-registry-router"
   internal           = true
   load_balancer_type = "application"
   security_groups    = [aws_security_group.docker_lb.id]
@@ -279,7 +279,7 @@ resource "aws_cloudwatch_log_group" "docker" {
 resource "aws_iam_role" "docker_exec" {
   for_each = local.registries
 
-  name                 = "role-tf-aws-gh-runner-docker-exec-${each.key}"
+  name                 = "${each.key}-registry-exec-role"
   assume_role_policy   = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -300,7 +300,7 @@ resource "aws_iam_role" "docker_exec" {
 resource "aws_iam_role" "docker" {
   for_each = local.registries
 
-  name                 = "role-tf-aws-gh-runner-docker-${each.key}"
+  name                 = "${each.key}-registry-role"
   assume_role_policy   = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -321,7 +321,7 @@ resource "aws_iam_role" "docker" {
 resource "aws_iam_role_policy" "docker_logging" {
   for_each = local.registries
 
-  name = "logging-tf-aws-gh-runner-docker-${each.key}"
+  name = "logging-${var.name}-docker-${each.key}"
   role = aws_iam_role.docker_exec[each.key].name
 
   policy = jsonencode({
@@ -347,13 +347,25 @@ resource "aws_s3_bucket" "docker" {
   bucket = each.value.s3_bucket
 
   tags = {
-    Name = "Terraform AWS GitHub Runner"
-    Url  = "https://github.com/pl-strflt/tf-aws-gh-runner"
+    Name = "Custom GitHub Runners"
+    Url  = "https://github.com/ipdxco/custom-github-runners"
+  }
+}
+
+resource "aws_s3_bucket_ownership_controls" "docker" {
+  for_each = local.registries
+
+  bucket = aws_s3_bucket.docker[each.key].id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
   }
 }
 
 resource "aws_s3_bucket_acl" "docker" {
   for_each = local.registries
+
+  depends_on = [ aws_s3_bucket_ownership_controls.docker ]
 
   bucket = aws_s3_bucket.docker[each.key].id
   acl    = "private"
@@ -377,7 +389,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "docker" {
 resource "aws_iam_role_policy" "docker_private_s3" {
   for_each = local.registries
 
-  name = "s3-policy-tf-aws-gh-runner-docker-proxy"
+  name = "s3-policy-${var.name}-docker-proxy"
   role = aws_iam_role.docker[each.key].name
 
   policy = jsonencode({
@@ -416,7 +428,7 @@ resource "aws_iam_role_policy" "docker_private_s3" {
 resource "aws_ssm_parameter" "docker" {
   for_each = local.registries
 
-  name  = "/tf-aws-gh-runner/docker/${each.key}_aws_lb_dns_name"
+  name  = "/custom-github-runners/docker/${each.key}_aws_lb_dns_name"
   type  = "String"
   value = aws_lb.docker[each.key].dns_name
 }
@@ -424,7 +436,7 @@ resource "aws_ssm_parameter" "docker" {
 # resource "aws_iam_role_policy" "shared_ssm_v2" {
 #   for_each = local.runners
 
-#   name = "tf-aws-gh-runner-shared-${each.key}"
+#   name = "${var.name}-shared-${each.key}"
 #   role = each.value.role_runner_id
 
 #   policy = jsonencode({
@@ -438,7 +450,7 @@ resource "aws_ssm_parameter" "docker" {
 #           "ssm:GetParametersByPath"
 #         ]
 #         Resource = [
-#           "arn:aws:ssm:${data.aws_region.default.name}:${data.aws_caller_identity.current.account_id}:parameter/tf-aws-gh-runner/*"
+#           "arn:aws:ssm:${data.aws_region.default.name}:${data.aws_caller_identity.current.account_id}:parameter/custom-github-runners/*"
 #         ]
 #       }
 #     ]
@@ -448,7 +460,7 @@ resource "aws_ssm_parameter" "docker" {
 resource "aws_iam_role_policy" "shared_ssm" {
   for_each = local.legacy_runners
 
-  name = "tf-aws-gh-runner-shared-${each.key}"
+  name = "${var.name}-shared-${each.key}"
   role = each.value.role_runner_id
 
   policy = jsonencode({
@@ -462,7 +474,7 @@ resource "aws_iam_role_policy" "shared_ssm" {
           "ssm:GetParametersByPath"
         ]
         Resource = [
-          "arn:aws:ssm:${data.aws_region.default.name}:${data.aws_caller_identity.current.account_id}:parameter/tf-aws-gh-runner/*"
+          "arn:aws:ssm:${data.aws_region.default.name}:${data.aws_caller_identity.current.account_id}:parameter/custom-github-runners/*"
         ]
       }
     ]
