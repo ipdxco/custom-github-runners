@@ -24,14 +24,14 @@ runs:
         const callerIdentity = await exec.getExecOutput('aws sts get-caller-identity');
         const arn = JSON.parse(callerIdentity.stdout).Arn;
         const prefix = arn.match(/\/(.+)-runner-role\//)[1];
-        const buckets = await exec.getExecOutput('aws s3api list-buckets');
-        const bucket = JSON.parse(buckets.stdout).Buckets[0].Name;
 
         const source = process.env.INPUTS_SOURCE;
         const destination = process.env.INPUTS_DESTINATION || source;
 
         const sourceFullPath = `${prefix}/${process.env.GITHUB_REPOSITORY}/${process.env.GITHUB_RUN_ID}/${process.env.GITHUB_RUN_ATTEMPT}/${source}`
         const recursiveOption = source.endsWith('/') ? '--recursive' : '';
+
+        const bucket = 'tf-aws-gh-runner'
 
         await exec.exec(`aws s3 cp s3://${bucket}/${sourceFullPath} ${destination} ${recursiveOption}`)
 

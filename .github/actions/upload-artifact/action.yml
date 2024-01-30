@@ -27,8 +27,6 @@ runs:
         const callerIdentity = await exec.getExecOutput('aws sts get-caller-identity');
         const arn = JSON.parse(callerIdentity.stdout).Arn;
         const prefix = arn.match(/\/(.+)-runner-role\//)[1];
-        const buckets = await exec.getExecOutput('aws s3api list-buckets');
-        const bucket = JSON.parse(buckets.stdout).Buckets[0].Name;
 
         const source = process.env.INPUTS_SOURCE;
         const destination = process.env.INPUTS_DESTINATION || source;
@@ -37,6 +35,8 @@ runs:
         const destinationPath = sourceStats.isFile() && destination.endsWith('/') ? `${destination}/${path.basename(source)}` : destination
         const destinationFullPath = `${prefix}/${process.env.GITHUB_REPOSITORY}/${process.env.GITHUB_RUN_ID}/${process.env.GITHUB_RUN_ATTEMPT}/${destinationPath}`
         const recursiveOption = fs.lstatSync(source).isDirectory() ? '--recursive' : '';
+
+        const bucket = 'tf-aws-gh-runner'
 
         await exec.exec(`aws s3 cp ${source} s3://${bucket}/${destinationFullPath} ${recursiveOption} --acl public-read`)
 
