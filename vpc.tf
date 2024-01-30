@@ -6,7 +6,7 @@
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "5.1.0"
+  version = "5.1.2"
 
   name = "vpc-${var.name}"
   cidr = "10.0.0.0/16"
@@ -40,6 +40,25 @@ module "vpc" {
   public_subnet_ipv6_prefixes   = [0, 1, 2]
   private_subnet_ipv6_prefixes  = [3, 4, 5]
   database_subnet_ipv6_prefixes = [6, 7, 8]
+
+  default_security_group_ingress = [
+    {
+      description = "Allow all"
+      protocol    = -1
+      self        = true
+    }
+  ]
+
+  default_security_group_egress = [
+    {
+      description      = "Allow all"
+      protocol         = -1
+      from_port        = 0
+      to_port          = 0
+      cidr_blocks      = "0.0.0.0/0"
+      ipv6_cidr_blocks = "::/0"
+    }
+  ]
 
   tags = local.tags
 }

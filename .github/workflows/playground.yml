@@ -2,9 +2,6 @@ name: Playground
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/playground.yml
 
 jobs:
   playground:
