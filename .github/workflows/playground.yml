@@ -8,5 +8,14 @@ jobs:
     name: Play
     runs-on: ["self-hosted", "linux", "x64", "large"]
     steps:
-      - run: echo "Hello, world!"
+      - run: echo "Hello, world!" > hello.txt
+        shell: bash
+      - uses: ipdxco/custom-github-runners/.github/actions/upload-artifact@main
+        with:
+          source: remote.txt
+      - uses: ipdxco/custom-github-runners/.github/actions/download-artifact@main
+        with:
+          source: remote.txt
+          destination: goodbye.txt
+      - run: cat goodbye.txt
         shell: bash
