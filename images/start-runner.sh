@@ -21,10 +21,14 @@ echo "Retrieved INSTANCE_ID from AWS API ($instance_id)"
 environment=$(curl -f -H "X-aws-ec2-metadata-token: $token" -v http://169.254.169.254/latest/meta-data/tags/instance/ghr:environment)
 ssm_config_path=$(curl -f -H "X-aws-ec2-metadata-token: $token" -v http://169.254.169.254/latest/meta-data/tags/instance/ghr:ssm_config_path)
 runner_name_prefix=$(curl -f -H "X-aws-ec2-metadata-token: $token" -v http://169.254.169.254/latest/meta-data/tags/instance/ghr:runner_name_prefix || echo "")
+export IPDX_S3_BUCKET_NAME=$(curl -f -H "X-aws-ec2-metadata-token: $token" -v http://169.254.169.254/latest/meta-data/tags/instance/ghr:ipdx:s3_bucket_name || echo "")
+export IPDX_S3_BUCKET_PREFIX=$(curl -f -H "X-aws-ec2-metadata-token: $token" -v http://169.254.169.254/latest/meta-data/tags/instance/ghr:ipdx:s3_bucket_prefix || echo "")
 
 echo "Retrieved ghr:environment tag - ($environment)"
 echo "Retrieved ghr:ssm_config_path tag - ($ssm_config_path)"
 echo "Retrieved ghr:runner_name_prefix tag - ($runner_name_prefix)"
+echo "Retrieved ghr:ipdx:s3_bucket_name tag - ($IPDX_S3_BUCKET_NAME)"
+echo "Retrieved ghr:ipdx:s3_bucket_prefix tag - ($IPDX_S3_BUCKET_PREFIX)"
 
 # fails on public subnet
 parameters=$(aws ssm get-parameters-by-path --path "$ssm_config_path" --region "$region" --query "Parameters[*].{Name:Name,Value:Value}")
@@ -144,7 +148,7 @@ if [[ $agent_mode = "ephemeral" ]]; then
 
 cat >/opt/start-runner-service.sh <<-EOF
   echo "Starting the runner in ephemeral mode"
-  sudo --preserve-env=GOPROXY --preserve-env=RUNNER_ALLOW_RUNASROOT -u "$run_as" -- ./run.sh
+  sudo --preserve-env=GOPROXY --preserve-env=IPDX_S3_BUCKET_NAME --preserve-env=IPDX_S3_BUCKET_PREFIX --preserve-env=RUNNER_ALLOW_RUNASROOT -u "$run_as" -- ./run.sh
   echo "Runner has finished with $? exit code"
 
   # Ideas for further improvements:

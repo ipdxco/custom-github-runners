@@ -352,6 +352,18 @@ resource "aws_s3_bucket" "docker" {
   }
 }
 
+# Uncomment if proxy registries are not working correctly
+# resource "aws_s3_bucket_public_access_block" "docker" {
+#   for_each = aws_s3_bucket.docker
+
+#   bucket = each.value.id
+
+#   block_public_acls       = false
+#   block_public_policy     = false
+#   ignore_public_acls      = false
+#   restrict_public_buckets = false
+# }
+
 resource "aws_s3_bucket_ownership_controls" "docker" {
   for_each = local.registries
 

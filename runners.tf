@@ -248,6 +248,11 @@ module "multi-runner" {
         runner_os = v.runner_os
         runner_architecture = v.runner_architecture
 
+        runner_ec2_tags = {
+          "ghr:ipdx:s3_bucket_name": var.name,
+          "ghr:ipdx:s3_bucket_prefix": "multi-${k}-action-runner"
+        }
+
         ami_filter = lookup(v, "ami_filter", null)
         ami_owners = lookup(v, "ami_owners", ["amazon"])
         enable_userdata = lookup(v, "enable_userdata", true)
