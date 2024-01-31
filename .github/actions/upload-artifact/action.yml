@@ -24,9 +24,7 @@ runs:
         const fs = require('fs');
         const path = require('path');
 
-        const callerIdentity = await exec.getExecOutput('aws sts get-caller-identity');
-        const arn = JSON.parse(callerIdentity.stdout).Arn;
-        const prefix = arn.match(/\/(.+)-runner-role\//)[1];
+        const prefix = process.env.IPDX_S3_BUCKET_PREFIX;
 
         const source = process.env.INPUTS_SOURCE;
         const destination = process.env.INPUTS_DESTINATION || source;
@@ -36,7 +34,7 @@ runs:
         const destinationFullPath = `${prefix}/${process.env.GITHUB_REPOSITORY}/${process.env.GITHUB_RUN_ID}/${process.env.GITHUB_RUN_ATTEMPT}/${destinationPath}`
         const recursiveOption = fs.lstatSync(source).isDirectory() ? '--recursive' : '';
 
-        const bucket = 'tf-aws-gh-runner'
+        const bucket = process.env.IPDX_S3_BUCKET_NAME;
 
         await exec.exec(`aws s3 cp ${source} s3://${bucket}/${destinationFullPath} ${recursiveOption} --acl public-read`)
 

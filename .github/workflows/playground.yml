@@ -8,7 +8,15 @@ jobs:
     name: Play
     runs-on: ["self-hosted", "linux", "x64", "large"]
     steps:
-      - run: |
-          TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 180"` \
-            && curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/
+      - run: echo "Hello, world!" > hello.txt
+        shell: bash
+      - uses: ipdxco/custom-github-runners/.github/actions/upload-artifact@meta
+        with:
+          source: hello.txt
+          destination: remote.txt
+      - uses: ipdxco/custom-github-runners/.github/actions/download-artifact@meta
+        with:
+          source: remote.txt
+          destination: goodbye.txt
+      - run: cat goodbye.txt
         shell: bash
