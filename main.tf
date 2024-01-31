@@ -65,32 +65,14 @@ data "aws_caller_identity" "current" {}
 
 # RETENTION
 
-# resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners_v2" {
-#   bucket = data.aws_s3_bucket.custom-github-runners.id
+resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners_v2" {
+  count = length(local.runners) > 0 ? 1 : 0
 
-#   # artifacts.tf
-#   dynamic "rule" {
-#     for_each = local.runners
-
-#     content {
-#       id = rule.key
-#       filter {
-#         prefix = "${rule.key}/"
-#       }
-#       expiration {
-#         days = 90
-#       }
-#       status = "Enabled"
-#     }
-#   }
-# }
-
-resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners" {
   bucket = data.aws_s3_bucket.custom-github-runners.id
 
   # artifacts.tf
   dynamic "rule" {
-    for_each = local.legacy_runners
+    for_each = local.runners
 
     content {
       id = rule.key
@@ -105,104 +87,124 @@ resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners" {
   }
 }
 
-resource "aws_cloudwatch_log_metric_filter" "github-timeout" {
-  for_each = local.legacy_runners
-  depends_on = [ module.runners ]
+# resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners" {
+#   bucket = data.aws_s3_bucket.custom-github-runners.id
 
-  name           = "github-timeout-${each.key}"
-  pattern        = "\"The HTTP request timed out after 00:01:40.\""
-  log_group_name = "/github-self-hosted-runners/${each.key}/runner-startup"
+#   # artifacts.tf
+#   dynamic "rule" {
+#     for_each = local.legacy_runners
 
-  metric_transformation {
-    name          = "Timeout"
-    namespace     = "GitHub"
-    value         = "1"
-    default_value = null
-    unit          = "Count"
-  }
-}
+#     content {
+#       id = rule.key
+#       filter {
+#         prefix = "${rule.key}/"
+#       }
+#       expiration {
+#         days = 90
+#       }
+#       status = "Enabled"
+#     }
+#   }
+# }
 
-resource "aws_cloudwatch_log_metric_filter" "github-timeout-2" {
-  for_each = local.legacy_runners
-  depends_on = [ module.runners ]
+# resource "aws_cloudwatch_log_metric_filter" "github-timeout" {
+#   for_each = local.legacy_runners
+#   depends_on = [ module.runners ]
 
-  name           = "github-timeout-${each.key}"
-  pattern        = "\"The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.\""
-  log_group_name = "/github-self-hosted-runners/${each.key}/runner"
+#   name           = "github-timeout-${each.key}"
+#   pattern        = "\"The HTTP request timed out after 00:01:40.\""
+#   log_group_name = "/github-self-hosted-runners/${each.key}/runner-startup"
 
-  metric_transformation {
-    name          = "Timeout2"
-    namespace     = "GitHub"
-    value         = "1"
-    default_value = null
-    unit          = "Count"
-  }
-}
+#   metric_transformation {
+#     name          = "Timeout"
+#     namespace     = "GitHub"
+#     value         = "1"
+#     default_value = null
+#     unit          = "Count"
+#   }
+# }
 
-resource "aws_sns_topic" "github-timeout" {
-  name = "github-timeout"
-}
+# resource "aws_cloudwatch_log_metric_filter" "github-timeout-2" {
+#   for_each = local.legacy_runners
+#   depends_on = [ module.runners ]
 
-resource "aws_sns_topic_subscription" "github-timeout" {
-  count = var.email != "" ? 1 : 0
+#   name           = "github-timeout-${each.key}"
+#   pattern        = "\"The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.\""
+#   log_group_name = "/github-self-hosted-runners/${each.key}/runner"
 
-  topic_arn = aws_sns_topic.github-timeout.arn
-  protocol  = "email"
-  endpoint  = var.email
-}
+#   metric_transformation {
+#     name          = "Timeout2"
+#     namespace     = "GitHub"
+#     value         = "1"
+#     default_value = null
+#     unit          = "Count"
+#   }
+# }
 
-resource "aws_cloudwatch_metric_alarm" "github-timeout" {
-  for_each = aws_cloudwatch_log_metric_filter.github-timeout
+# resource "aws_sns_topic" "github-timeout" {
+#   name = "github-timeout"
+# }
 
-  alarm_name        = "github-timeout-${each.key}"
-  alarm_description = "GitHub Runner Timeout"
-  actions_enabled   = true
+# resource "aws_sns_topic_subscription" "github-timeout" {
+#   count = var.email != "" ? 1 : 0
 
-  alarm_actions             = [aws_sns_topic.github-timeout.arn]
-  ok_actions                = []
-  insufficient_data_actions = []
+#   topic_arn = aws_sns_topic.github-timeout.arn
+#   protocol  = "email"
+#   endpoint  = var.email
+# }
 
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  threshold           = "0"
-  unit                = "Count"
+# resource "aws_cloudwatch_metric_alarm" "github-timeout" {
+#   for_each = aws_cloudwatch_log_metric_filter.github-timeout
 
-  datapoints_to_alarm                   = "1"
-  treat_missing_data                    = "notBreaching"
+#   alarm_name        = "github-timeout-${each.key}"
+#   alarm_description = "GitHub Runner Timeout"
+#   actions_enabled   = true
 
-  # conflicts with metric_query
-  metric_name        = each.value.metric_transformation[0].name
-  namespace          = each.value.metric_transformation[0].namespace
-  period             = "600"
-  statistic          = "Sum"
+#   alarm_actions             = [aws_sns_topic.github-timeout.arn]
+#   ok_actions                = []
+#   insufficient_data_actions = []
 
-  tags = local.tags
-}
+#   comparison_operator = "GreaterThanThreshold"
+#   evaluation_periods  = "1"
+#   threshold           = "0"
+#   unit                = "Count"
 
-resource "aws_cloudwatch_metric_alarm" "github-timeout-2" {
-  for_each = aws_cloudwatch_log_metric_filter.github-timeout-2
+#   datapoints_to_alarm                   = "1"
+#   treat_missing_data                    = "notBreaching"
 
-  alarm_name        = "github-timeout-2-${each.key}"
-  alarm_description = "GitHub Runner Timeout 2"
-  actions_enabled   = true
+#   # conflicts with metric_query
+#   metric_name        = each.value.metric_transformation[0].name
+#   namespace          = each.value.metric_transformation[0].namespace
+#   period             = "600"
+#   statistic          = "Sum"
 
-  alarm_actions             = [aws_sns_topic.github-timeout.arn]
-  ok_actions                = []
-  insufficient_data_actions = []
+#   tags = local.tags
+# }
 
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  threshold           = "1"
-  unit                = "Count"
+# resource "aws_cloudwatch_metric_alarm" "github-timeout-2" {
+#   for_each = aws_cloudwatch_log_metric_filter.github-timeout-2
 
-  datapoints_to_alarm                   = "1"
-  treat_missing_data                    = "notBreaching"
+#   alarm_name        = "github-timeout-2-${each.key}"
+#   alarm_description = "GitHub Runner Timeout 2"
+#   actions_enabled   = true
 
-  # conflicts with metric_query
-  metric_name        = each.value.metric_transformation[0].name
-  namespace          = each.value.metric_transformation[0].namespace
-  period             = "600"
-  statistic          = "Sum"
+#   alarm_actions             = [aws_sns_topic.github-timeout.arn]
+#   ok_actions                = []
+#   insufficient_data_actions = []
 
-  tags = local.tags
-}
+#   comparison_operator = "GreaterThanThreshold"
+#   evaluation_periods  = "1"
+#   threshold           = "1"
+#   unit                = "Count"
+
+#   datapoints_to_alarm                   = "1"
+#   treat_missing_data                    = "notBreaching"
+
+#   # conflicts with metric_query
+#   metric_name        = each.value.metric_transformation[0].name
+#   namespace          = each.value.metric_transformation[0].namespace
+#   period             = "600"
+#   statistic          = "Sum"
+
+#   tags = local.tags
+# }
