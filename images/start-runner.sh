@@ -44,7 +44,7 @@ echo "Retrieved /$ssm_config_path/token_path parameter - ($token_path)"
 
 if [[ "$enable_cloudwatch_agent" == "true" ]]; then
   echo "Cloudwatch is enabled"
-  amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c "ssm:$ssm_config_path/cloudwatch_agent_config_runner"
+  nohup amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c "ssm:$ssm_config_path/cloudwatch_agent_config_runner" &
 fi
 
 ## Configure docker registries
@@ -80,7 +80,7 @@ sudo echo '[registry."'"$docker_proxy"'"]' >> /etc/buildkit/buildkitd.toml
 sudo echo '  http = true' >> /etc/buildkit/buildkitd.toml
 sudo echo '  insecure = true' >> /etc/buildkit/buildkitd.toml
 
-sudo service docker restart
+sudo service docker start
 
 ### Go Modules Proxy
 
@@ -112,11 +112,13 @@ if [[ "$run_as" == "root" ]]; then
   export RUNNER_ALLOW_RUNASROOT=1
 fi
 
+echo "Change ownership of /home/runner to $run_as"
 chown -R $run_as .
 
 echo "Configure GH Runner as user $run_as"
-sudo --preserve-env=RUNNER_ALLOW_RUNASROOT -u "$run_as" -- ./config.sh --unattended --name "$runner_name_prefix$instance_id" --work "work" $${config}
+sudo --preserve-env=RUNNER_ALLOW_RUNASROOT -u "$run_as" -- ./config.sh --unattended --name "$runner_name_prefix$instance_id" --work "work" $${config} # 20s to first log entry
 
+echo "Save runner info to /home/runner/.setup_info"
 info_arch=$(uname -p)
 info_os=$(( lsb_release -ds || cat /etc/*release || uname -om ) 2>/dev/null | head -n1 | cut -d "=" -f2- | tr -d '"')
 
