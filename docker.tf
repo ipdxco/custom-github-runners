@@ -4,8 +4,8 @@ locals {
       port = 3000
       image     = "gomods/athens@sha256:0f1547a80a2e034a96f1c9f3b652317834d3f2086b4011ec164a93fa16d23bdb"
       s3_bucket = "${var.name}-docker-goproxy"
-      cpu = 4
-      memory = 8
+      cpu = 1 # 0.25
+      memory = 8 # 2
       environment = [
         {
           name = "AWS_REGION"
@@ -39,7 +39,7 @@ locals {
       # WARN: Why edge instead of registry:2.8.1? https://github.com/distribution/distribution/issues/3645#issuecomment-1347430516
       image     = "distribution/distribution@sha256:43300dba89e7432db97365a4cb2918017ae8c08afb3d72fff0cb92db674bbc17"
       s3_bucket = "${var.name}-docker-proxy"
-      cpu = 1
+      cpu = 0.25
       memory = 2
       environment = [
         {

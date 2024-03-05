@@ -214,7 +214,7 @@ module "multi-runner" {
   version                         = "3.6.1"
   aws_region                      = data.aws_region.default.name
   vpc_id                          = module.vpc.vpc_id
-  subnet_ids                      = module.vpc.private_subnets
+  subnet_ids                      = module.vpc.public_subnets
 
   prefix = "multi"
   tags = local.tags
