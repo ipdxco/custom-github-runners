@@ -327,7 +327,7 @@ module "multi-runner" {
           }
         ]
 
-        scale_up_reserved_concurrent_executions = -1
+        scale_up_reserved_concurrent_executions = 1
       }
     } if contains(var.runner_white_list, k)
   }
