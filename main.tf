@@ -33,6 +33,20 @@ locals {
     Name = "Custom GitHub Runners"
     Url  = "https://github.com/ipdxco/custom-github-runners"
   }
+  filters = [
+    {
+      name = "Connection Refused"
+      metric = "ConnectionRefused"
+      pattern = "Connection refused"
+      group = "runner-startup"
+    },
+    {
+      name = "Parameter Not Found"
+      metric = "ParameterNotFound"
+      pattern = "ParameterNotFound"
+      group = "runner-startup"
+    }
+  ]
 }
 
 provider "aws" {}
@@ -87,124 +101,64 @@ resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners_v2" {
   }
 }
 
-# resource "aws_s3_bucket_lifecycle_configuration" "custom-github-runners" {
-#   bucket = data.aws_s3_bucket.custom-github-runners.id
+# LOG TO METRICS
 
-#   # artifacts.tf
-#   dynamic "rule" {
-#     for_each = local.legacy_runners
+resource "aws_cloudwatch_log_metric_filter" "custom-github-runners" {
+  for_each = { for config in flatten([
+    for runner in keys(module.multi-runner.runners_map) : [
+      for filter in local.filters : merge(filter, { runner = runner })
+    ]
+  ]) : "/github-self-hosted-runners/multi-${config.runner}/${config.group}/${config.metric}" => config }
 
-#     content {
-#       id = rule.key
-#       filter {
-#         prefix = "${rule.key}/"
-#       }
-#       expiration {
-#         days = 90
-#       }
-#       status = "Enabled"
-#     }
-#   }
-# }
+  name           = each.value.name
+  pattern        = each.value.pattern
+  log_group_name = "/github-self-hosted-runners/multi-${each.value.runner}/${each.value.group}"
 
-# resource "aws_cloudwatch_log_metric_filter" "github-timeout" {
-#   for_each = local.legacy_runners
-#   depends_on = [ module.runners ]
+  metric_transformation {
+    name          = each.value.metric
+    namespace     = "/github-self-hosted-runners/multi-${each.value.runner}/${each.value.group}"
+    value         = "1"
+    default_value = null
+    unit          = "Count"
+  }
+}
 
-#   name           = "github-timeout-${each.key}"
-#   pattern        = "\"The HTTP request timed out after 00:01:40.\""
-#   log_group_name = "/github-self-hosted-runners/${each.key}/runner-startup"
+resource "aws_sns_topic" "custom-github-runners" {
+  name = "custom-github-runners"
+}
 
-#   metric_transformation {
-#     name          = "Timeout"
-#     namespace     = "GitHub"
-#     value         = "1"
-#     default_value = null
-#     unit          = "Count"
-#   }
-# }
+resource "aws_sns_topic_subscription" "custom-github-runners" {
+  count = var.email != "" ? 1 : 0
 
-# resource "aws_cloudwatch_log_metric_filter" "github-timeout-2" {
-#   for_each = local.legacy_runners
-#   depends_on = [ module.runners ]
+  topic_arn = aws_sns_topic.custom-github-runners.arn
+  protocol  = "email"
+  endpoint  = var.email
+}
 
-#   name           = "github-timeout-${each.key}"
-#   pattern        = "\"The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.\""
-#   log_group_name = "/github-self-hosted-runners/${each.key}/runner"
+resource "aws_cloudwatch_metric_alarm" "custom-github-runners" {
+  for_each = aws_cloudwatch_log_metric_filter.custom-github-runners
 
-#   metric_transformation {
-#     name          = "Timeout2"
-#     namespace     = "GitHub"
-#     value         = "1"
-#     default_value = null
-#     unit          = "Count"
-#   }
-# }
+  alarm_name        = "${each.value.metric_transformation[0].namespace}/${each.value.metric_transformation[0].name}"
+  alarm_description = "${each.value.name} exceeded threshold"
+  actions_enabled   = true
 
-# resource "aws_sns_topic" "github-timeout" {
-#   name = "github-timeout"
-# }
+  alarm_actions             = [aws_sns_topic.custom-github-runners.arn]
+  ok_actions                = []
+  insufficient_data_actions = []
 
-# resource "aws_sns_topic_subscription" "github-timeout" {
-#   count = var.email != "" ? 1 : 0
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  threshold           = "0"
+  unit                = "Count"
 
-#   topic_arn = aws_sns_topic.github-timeout.arn
-#   protocol  = "email"
-#   endpoint  = var.email
-# }
+  datapoints_to_alarm                   = "1"
+  treat_missing_data                    = "notBreaching"
 
-# resource "aws_cloudwatch_metric_alarm" "github-timeout" {
-#   for_each = aws_cloudwatch_log_metric_filter.github-timeout
+  # conflicts with metric_query
+  metric_name        = each.value.metric_transformation[0].name
+  namespace          = each.value.metric_transformation[0].namespace
+  period             = "600"
+  statistic          = "Sum"
 
-#   alarm_name        = "github-timeout-${each.key}"
-#   alarm_description = "GitHub Runner Timeout"
-#   actions_enabled   = true
-
-#   alarm_actions             = [aws_sns_topic.github-timeout.arn]
-#   ok_actions                = []
-#   insufficient_data_actions = []
-
-#   comparison_operator = "GreaterThanThreshold"
-#   evaluation_periods  = "1"
-#   threshold           = "0"
-#   unit                = "Count"
-
-#   datapoints_to_alarm                   = "1"
-#   treat_missing_data                    = "notBreaching"
-
-#   # conflicts with metric_query
-#   metric_name        = each.value.metric_transformation[0].name
-#   namespace          = each.value.metric_transformation[0].namespace
-#   period             = "600"
-#   statistic          = "Sum"
-
-#   tags = local.tags
-# }
-
-# resource "aws_cloudwatch_metric_alarm" "github-timeout-2" {
-#   for_each = aws_cloudwatch_log_metric_filter.github-timeout-2
-
-#   alarm_name        = "github-timeout-2-${each.key}"
-#   alarm_description = "GitHub Runner Timeout 2"
-#   actions_enabled   = true
-
-#   alarm_actions             = [aws_sns_topic.github-timeout.arn]
-#   ok_actions                = []
-#   insufficient_data_actions = []
-
-#   comparison_operator = "GreaterThanThreshold"
-#   evaluation_periods  = "1"
-#   threshold           = "1"
-#   unit                = "Count"
-
-#   datapoints_to_alarm                   = "1"
-#   treat_missing_data                    = "notBreaching"
-
-#   # conflicts with metric_query
-#   metric_name        = each.value.metric_transformation[0].name
-#   namespace          = each.value.metric_transformation[0].namespace
-#   period             = "600"
-#   statistic          = "Sum"
-
-#   tags = local.tags
-# }
+  tags = local.tags
+}
