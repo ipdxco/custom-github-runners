@@ -1,7 +1,7 @@
 locals {
   runner_configs = {
     "linux-x64-4xlarge" = {
-      runner_extra_labels = "4xlarge"
+      runner_extra_labels = ["4xlarge"]
       runner_os = "linux"
       runner_architecture = "x64"
       instance_types = ["c5.4xlarge"]
@@ -26,7 +26,7 @@ locals {
       }]
     }
     "linux-x64-2xlarge" = {
-      runner_extra_labels = "2xlarge"
+      runner_extra_labels = ["2xlarge"]
       runner_os = "linux"
       runner_architecture = "x64"
       instance_types = ["c5.2xlarge"]
@@ -51,11 +51,11 @@ locals {
       }]
     }
     "linux-x64-xlarge" = {
-      runner_extra_labels = "xlarge"
+      runner_extra_labels = ["xlarge"]
       runner_os = "linux"
       runner_architecture = "x64"
       instance_types = ["c5.xlarge", "m5.xlarge"]
-      runners_maximum_count = 50
+      runners_maximum_count = 120
       instance_target_capacity_type = "on-demand"
       ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
@@ -76,7 +76,7 @@ locals {
       }]
     }
     "linux-x64-large" = {
-      runner_extra_labels = "large"
+      runner_extra_labels = ["large"]
       runner_os = "linux"
       runner_architecture = "x64"
       instance_types = ["c5.large", "m5.large"]
@@ -101,7 +101,7 @@ locals {
       }]
     }
     "windows-x64-2xlarge" = {
-      runner_extra_labels = "playground"
+      runner_extra_labels = ["playground"]
       runner_os = "windows"
       runner_architecture = "x64"
       instance_types = ["c5.2xlarge"]
@@ -126,7 +126,7 @@ locals {
       }]
     }
     "windows-x64-xlarge" = {
-      runner_extra_labels = "playground"
+      runner_extra_labels = ["playground"]
       runner_os = "windows"
       runner_architecture = "x64"
       instance_types = ["c5.xlarge", "m5.xlarge"]
@@ -151,7 +151,7 @@ locals {
       }]
     }
     "playground" = {
-      runner_extra_labels = "playground"
+      runner_extra_labels = ["playground"]
       runner_os = "linux"
       runner_architecture = "x64"
       instance_types = ["c5.4xlarge"]
@@ -176,7 +176,7 @@ locals {
       }]
     }
     "windows-playground" = {
-      runner_extra_labels = "playground"
+      runner_extra_labels = ["playground"]
       runner_os = "windows"
       runner_architecture = "x64"
       instance_types = ["c5.xlarge"]
@@ -204,14 +204,14 @@ locals {
   # legacy_runners = {for k, v in module.runners: k => {
   #   role_runner_id = v.runners.role_runner.id
   # }}
-  runners = {for v in module.multi-runner.runners : replace(v.launch_template_name, "-action-runner$", "") => {
+  runners = {for v in values(module.multi-runner.runners_map) : replace(v.launch_template_name, "-action-runner$", "") => {
     role_runner_id = v.role_runner.id
   }}
 }
 
 module "multi-runner" {
   source                          = "philips-labs/github-runner/aws//modules/multi-runner"
-  version                         = "3.6.1"
+  version                         = "5.9.0"
   aws_region                      = data.aws_region.default.name
   vpc_id                          = module.vpc.vpc_id
   subnet_ids                      = module.vpc.public_subnets
@@ -228,13 +228,18 @@ module "multi-runner" {
   webhook_lambda_zip                = "bootstrap/webhook.zip"
   runner_binaries_syncer_lambda_zip = "bootstrap/runner-binaries-syncer.zip"
   runners_lambda_zip                = "bootstrap/runners.zip"
+  ami_housekeeper_lambda_zip        = "bootstrap/ami-housekeeper.zip"
 
   repository_white_list = var.repository_white_list
+
+  logging_retention_in_days	= 7
+
+  associate_public_ipv4_address = false
 
   multi_runner_config = {
     for k, v in local.runner_configs : k => {
       matcherConfig = {
-        labelMatchers = [concat(["self-hosted", v.runner_os, v.runner_architecture], split(",", v.runner_extra_labels))]
+        labelMatchers = [concat(["self-hosted", v.runner_os, v.runner_architecture], v.runner_extra_labels)]
         exactMatch    = true
       }
       fifo                = true
@@ -287,6 +292,8 @@ module "multi-runner" {
         runners_maximum_count = v.runners_maximum_count
 
         enable_ephemeral_runners = true
+
+        enable_jit_config = false
 
         log_level = "debug"
 

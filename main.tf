@@ -15,7 +15,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "5.9.0"
+      version = "5.41.0"
     }
     local = {
       source = "hashicorp/local"
@@ -44,6 +44,12 @@ locals {
       name = "Parameter Not Found"
       metric = "ParameterNotFound"
       pattern = "ParameterNotFound"
+      group = "runner-startup"
+    },
+    {
+      name = "HTTP Request Timed Out"
+      metric = "HttpRequestTimedOut"
+      pattern = "HTTP request timed out"
       group = "runner-startup"
     }
   ]

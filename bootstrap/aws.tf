@@ -7,7 +7,7 @@
 terraform {
   required_providers {
     aws = {
-      version = "5.9.0"
+      version = "5.41.0"
     }
   }
 
@@ -116,19 +116,23 @@ resource "aws_iam_user_policy" "this" {
 
 module "github-runner_download-lambda" {
   source  = "philips-labs/github-runner/aws//modules/download-lambda"
-  version = "3.6.1"
+  version = "5.9.0"
   lambdas = [
     {
       name = "webhook"
-      tag  = "v3.6.1"
+      tag  = "v5.9.0"
     },
     {
       name = "runners"
-      tag  = "v3.6.1"
+      tag  = "v5.9.0"
     },
     {
       name = "runner-binaries-syncer"
-      tag  = "v3.6.1"
+      tag  = "v5.9.0"
+    },
+    {
+      name = "ami-housekeeper"
+      tag  = "v5.9.0"
     }
   ]
 }
