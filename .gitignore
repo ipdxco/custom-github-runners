@@ -30,3 +30,7 @@ crash.log
 *.tfplan
 
 main_override.tf
+main_override.*._tf
+
+.env
+.env.*

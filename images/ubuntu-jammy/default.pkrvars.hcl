@@ -16,3 +16,5 @@ custom_shell_commands = [
 post_install_custom_shell_commands = []
 
 name_suffix = "default"
+
+runner_architecture = "arm64"

@@ -7,6 +7,8 @@ jobs:
   playground:
     name: Play
     runs-on: ["self-hosted", "linux", "x64", "large"]
+    permissions:
+      contents: ${{ github.event_name == 'pull_request' && 'write' || 'read' }}
     steps:
       - run: echo "Hello, world!" > hello.txt
         shell: bash

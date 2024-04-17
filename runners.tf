@@ -1,5 +1,105 @@
 locals {
   runner_configs = {
+    "linux-x64-2xlarge-nvidia" = {
+      runner_extra_labels = ["2xlarge", "nvidia"]
+      runner_os = "linux"
+      runner_architecture = "x64"
+      instance_types = ["g4dn.2xlarge"]
+      runners_maximum_count = 10
+      instance_target_capacity_type = "on-demand"
+      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
+      enable_userdata = false
+      enable_runner_binaries_syncer = false
+      enable_runner_detailed_monitoring = false
+      runner_run_as = "runner"
+      block_device_mappings = [{
+        device_name           = "/dev/sda1"
+        delete_on_termination = true
+        volume_type           = "io2"
+        volume_size           = 100
+        encrypted             = true
+        iops                  = 2500
+        throughput            = null
+        kms_key_id            = null
+        snapshot_id           = null
+      }]
+    }
+    "linux-x64-xlarge-nvidia" = {
+      runner_extra_labels = ["xlarge", "nvidia"]
+      runner_os = "linux"
+      runner_architecture = "x64"
+      instance_types = ["g4dn.xlarge"]
+      runners_maximum_count = 10
+      instance_target_capacity_type = "on-demand"
+      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
+      enable_userdata = false
+      enable_runner_binaries_syncer = false
+      enable_runner_detailed_monitoring = false
+      runner_run_as = "runner"
+      block_device_mappings = [{
+        device_name           = "/dev/sda1"
+        delete_on_termination = true
+        volume_type           = "gp3"
+        volume_size           = 100
+        encrypted             = true
+        iops                  = null
+        throughput            = null
+        kms_key_id            = null
+        snapshot_id           = null
+      }]
+    }
+    "linux-arm64-2xlarge" = {
+      runner_extra_labels = ["2xlarge"]
+      runner_os = "linux"
+      runner_architecture = "arm64"
+      instance_types = ["m7g.2xlarge"]
+      runners_maximum_count = 10
+      instance_target_capacity_type = "on-demand"
+      ami_filter = { name = ["github-runner-ubuntu-jammy-arm64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
+      enable_userdata = false
+      enable_runner_binaries_syncer = false
+      enable_runner_detailed_monitoring = false
+      runner_run_as = "runner"
+      block_device_mappings = [{
+        device_name           = "/dev/sda1"
+        delete_on_termination = true
+        volume_type           = "gp3"
+        volume_size           = 100
+        encrypted             = true
+        iops                  = null
+        throughput            = null
+        kms_key_id            = null
+        snapshot_id           = null
+      }]
+    }
+    "linux-arm64-xlarge" = {
+      runner_extra_labels = ["xlarge"]
+      runner_os = "linux"
+      runner_architecture = "arm64"
+      instance_types = ["m7g.xlarge"]
+      runners_maximum_count = 10
+      instance_target_capacity_type = "on-demand"
+      ami_filter = { name = ["github-runner-ubuntu-jammy-arm64-*-default"], state = ["available"] }
+      ami_owners = ["${data.aws_caller_identity.current.account_id}"]
+      enable_userdata = false
+      enable_runner_binaries_syncer = false
+      enable_runner_detailed_monitoring = false
+      runner_run_as = "runner"
+      block_device_mappings = [{
+        device_name           = "/dev/sda1"
+        delete_on_termination = true
+        volume_type           = "gp3"
+        volume_size           = 100
+        encrypted             = true
+        iops                  = null
+        throughput            = null
+        kms_key_id            = null
+        snapshot_id           = null
+      }]
+    }
     "linux-x64-4xlarge" = {
       runner_extra_labels = ["4xlarge"]
       runner_os = "linux"

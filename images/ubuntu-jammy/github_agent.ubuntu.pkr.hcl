@@ -49,20 +49,26 @@ variable "runner_version" {
   default     = "2.312.0"
 }
 
+variable "runner_architecture" {
+  description = "The architecture of the runner software to install"
+  type        = string
+  default     = "x64"
+}
+
 source "amazon-ebs" "githubrunner" {
   ami_name                    = join("-", [
     "github-runner",
     "ubuntu-jammy",
-    "amd64",
+    "${var.runner_architecture == "x64" ? "amd64" : "arm64"}",
     formatdate("YYYYMMDDhhmm", timestamp()),
     var.name_suffix
   ])
-  instance_type               = "t3.medium"
+  instance_type               = "${var.runner_architecture == "x64" ? "t3.medium" : "m7g.medium"}"
   region                      = "us-east-1"
 
   source_ami_filter {
     filters = {
-      name                = "*ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
+      name                = "*ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-${var.runner_architecture == "x64" ? "amd64" : "arm64"}-server-*"
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
@@ -126,10 +132,10 @@ build {
       "sudo systemctl disable docker.service",
       // "sudo service docker start",
       "sudo usermod -a -G docker runner",
-      "sudo curl -f https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -o amazon-cloudwatch-agent.deb",
+      "sudo curl -f https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/${var.runner_architecture == "x64" ? "amd64" : "arm64"}/latest/amazon-cloudwatch-agent.deb -o amazon-cloudwatch-agent.deb",
       "sudo dpkg -i amazon-cloudwatch-agent.deb",
       "sudo systemctl restart amazon-cloudwatch-agent",
-      "sudo curl -f https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip",
+      "sudo curl -f https://awscli.amazonaws.com/awscli-exe-linux-${var.runner_architecture == "x64" ? "x86_64" : "aarch64"}.zip -o awscliv2.zip",
       "unzip awscliv2.zip",
       "sudo ./aws/install",
     ], var.custom_shell_commands)
@@ -150,19 +156,19 @@ build {
     content = templatefile("../install-runner.sh", {
       ARM_PATCH                       = ""
       S3_LOCATION_RUNNER_DISTRIBUTION = ""
-      RUNNER_ARCHITECTURE             = "x64"
+      RUNNER_ARCHITECTURE             = "${var.runner_architecture}"
     })
     destination = "/tmp/install-runner.sh"
   }
 
   provisioner "shell" {
     environment_vars = [
-      "RUNNER_TARBALL_URL=https://github.com/actions/runner/releases/download/v${var.runner_version}/actions-runner-linux-x64-${var.runner_version}.tar.gz"
+      "RUNNER_TARBALL_URL=https://github.com/actions/runner/releases/download/v${var.runner_version}/actions-runner-linux-${var.runner_architecture}-${var.runner_version}.tar.gz"
     ]
     inline = [
       "sudo chmod +x /tmp/install-runner.sh",
       "echo runner | tee -a /tmp/install-user.txt",
-      "sudo RUNNER_ARCHITECTURE=x64 RUNNER_TARBALL_URL=$RUNNER_TARBALL_URL /tmp/install-runner.sh",
+      "sudo RUNNER_ARCHITECTURE=${var.runner_architecture} RUNNER_TARBALL_URL=$RUNNER_TARBALL_URL /tmp/install-runner.sh",
       "echo ImageOS=ubuntu22 | sudo tee -a /home/runner/.env"
     ]
   }
