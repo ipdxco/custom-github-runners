@@ -307,6 +307,7 @@ locals {
   runners = {for v in values(module.multi-runner.runners_map) : replace(v.launch_template_name, "-action-runner$", "") => {
     role_runner_id = v.role_runner.id
   }}
+  runner_owners = distinct([for repository in var.repository_white_list: split("/", repository)[0]])
 }
 
 module "multi-runner" {
@@ -357,6 +358,13 @@ module "multi-runner" {
           "ghr:ipdx:s3_bucket_name": var.name,
           "ghr:ipdx:s3_bucket_prefix": "multi-${k}-action-runner"
         }
+
+        pool_runner_owner = join(",", local.runner_owners)
+        pool_config = [{
+          size = -1
+          # https://crontab.guru/every-30-minutes
+          schedule_expression = "cron(0/45 * * * ? *)"
+        }]
 
         ami_filter = lookup(v, "ami_filter", null)
         ami_owners = lookup(v, "ami_owners", ["amazon"])

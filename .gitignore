@@ -34,3 +34,5 @@ main_override.*._tf
 
 .env
 .env.*
+
+*.pem
