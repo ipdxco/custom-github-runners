@@ -337,7 +337,7 @@ locals {
 
 module "multi-runner" {
   source                          = "philips-labs/github-runner/aws//modules/multi-runner"
-  version                         = "5.9.0"
+  version                         = "5.21.0"
   aws_region                      = data.aws_region.default.name
   vpc_id                          = module.vpc.vpc_id
   subnet_ids                      = module.vpc.public_subnets
