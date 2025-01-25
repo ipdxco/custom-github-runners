@@ -336,8 +336,8 @@ locals {
 }
 
 module "multi-runner" {
-  source                          = "philips-labs/github-runner/aws//modules/multi-runner"
-  version                         = "5.21.0"
+  source                          = "github-aws-runners/github-runner/aws//modules/multi-runner"
+  version                         = "6.1.3"
   aws_region                      = data.aws_region.default.name
   vpc_id                          = module.vpc.vpc_id
   subnet_ids                      = module.vpc.public_subnets
@@ -349,6 +349,10 @@ module "multi-runner" {
     key_base64     = var.github_app_key_base64
     id             = var.github_app_id
     webhook_secret = var.github_webhook_secret
+  }
+
+  eventbridge = {
+    enable = false
   }
 
   webhook_lambda_zip                = "bootstrap/webhook.zip"
@@ -368,7 +372,6 @@ module "multi-runner" {
         labelMatchers = [concat(["self-hosted", v.runner_os, v.runner_architecture], v.runner_extra_labels)]
         exactMatch    = true
       }
-      fifo                = true
       redrive_build_queue = {
         enabled         = false
         maxReceiveCount = null
