@@ -7,7 +7,7 @@ locals {
       instance_types = ["g4dn.2xlarge"]
       runners_maximum_count = 10
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -32,7 +32,7 @@ locals {
       instance_types = ["g4dn.xlarge"]
       runners_maximum_count = 10
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -82,7 +82,7 @@ locals {
       instance_types = ["m7g.2xlarge"]
       runners_maximum_count = 10
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-arm64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-arm64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -132,7 +132,7 @@ locals {
       instance_types = ["c5.4xlarge"]
       runners_maximum_count = 50
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -157,7 +157,7 @@ locals {
       instance_types = ["c5.2xlarge"]
       runners_maximum_count = 50
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -182,7 +182,7 @@ locals {
       instance_types = ["c5.xlarge", "m5.xlarge"]
       runners_maximum_count = 120
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -207,7 +207,7 @@ locals {
       instance_types = ["c5.large", "m5.large"]
       runners_maximum_count = 100
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -282,7 +282,7 @@ locals {
       instance_types = ["c5.4xlarge"]
       runners_maximum_count = 1
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-amd64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-amd64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -387,12 +387,18 @@ module "multi-runner" {
           "ghr:ipdx:s3_bucket_prefix": "multi-${k}-action-runner"
         }
 
-        pool_runner_owner = join(",", local.runner_owners)
-        pool_config = [{
-          size = -1
-          # https://crontab.guru/every-30-minutes
-          schedule_expression = "cron(0/45 * * * ? *)"
-        }]
+        # TODO: If the job retry doesn't work as expected, try reviving https://github.com/github-aws-runners/terraform-aws-github-runner/pull/3855
+
+        # pool_runner_owner = join(",", local.runner_owners)
+        # pool_config = [{
+        #   size = -1
+        #   # https://crontab.guru/every-30-minutes
+        #   schedule_expression = "cron(0/45 * * * ? *)"
+        # }]
+
+        job_retry = {
+          enable = true
+        }
 
         ami_filter = lookup(v, "ami_filter", null)
         ami_owners = lookup(v, "ami_owners", ["amazon"])

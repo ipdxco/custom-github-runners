@@ -46,7 +46,7 @@ variable "post_install_custom_shell_commands" {
 variable "runner_version" {
   description = "The version (no v prefix) of the runner software to install https://github.com/actions/runner/releases"
   type        = string
-  default     = "2.316.1"
+  default     = "2.322.0"
 }
 
 variable "runner_architecture" {
@@ -58,7 +58,7 @@ variable "runner_architecture" {
 source "amazon-ebs" "githubrunner" {
   ami_name                    = join("-", [
     "github-runner",
-    "ubuntu-jammy",
+    "ubuntu-noble",
     "${var.runner_architecture == "x64" ? "amd64" : "arm64"}",
     formatdate("YYYYMMDDhhmm", timestamp()),
     var.name_suffix
@@ -68,7 +68,7 @@ source "amazon-ebs" "githubrunner" {
 
   source_ami_filter {
     filters = {
-      name                = "*ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-${var.runner_architecture == "x64" ? "amd64" : "arm64"}-server-*"
+      name                = "*ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-${var.runner_architecture == "x64" ? "amd64" : "arm64"}-server-*"
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
@@ -82,7 +82,7 @@ source "amazon-ebs" "githubrunner" {
     var.global_tags,
     var.ami_tags,
     {
-      OS_Version    = "ubuntu-jammy"
+      OS_Version    = "ubuntu-noble"
       Release       = "Latest"
       Base_AMI_Name = "{{ .SourceAMIName }}"
   })
@@ -169,7 +169,7 @@ build {
       "sudo chmod +x /tmp/install-runner.sh",
       "echo runner | tee -a /tmp/install-user.txt",
       "sudo RUNNER_ARCHITECTURE=${var.runner_architecture} RUNNER_TARBALL_URL=$RUNNER_TARBALL_URL /tmp/install-runner.sh",
-      "echo ImageOS=ubuntu22 | sudo tee -a /home/runner/.env"
+      "echo ImageOS=ubuntu24 | sudo tee -a /home/runner/.env"
     ]
   }
 
