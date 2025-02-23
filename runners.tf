@@ -57,7 +57,7 @@ locals {
       instance_types = ["m7g.4xlarge"]
       runners_maximum_count = 10
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-arm64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-arm64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
@@ -107,7 +107,7 @@ locals {
       instance_types = ["m7g.xlarge"]
       runners_maximum_count = 10
       instance_target_capacity_type = "on-demand"
-      ami_filter = { name = ["github-runner-ubuntu-jammy-arm64-*-default"], state = ["available"] }
+      ami_filter = { name = ["github-runner-ubuntu-noble-arm64-*-default"], state = ["available"] }
       ami_owners = ["${data.aws_caller_identity.current.account_id}"]
       enable_userdata = false
       enable_runner_binaries_syncer = false
