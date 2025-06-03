@@ -1,0 +1,47 @@
+name: Docker Cache
+description: Retrieve docker cache configuration
+inputs:
+  name:
+    description: 'The name under which docker blobs and manifests should be cached'
+    required: false
+outputs:
+  to:
+    description: 'The CSV value of the docker build --cache-to parameter'
+    value: ${{ fromJSON(steps.cache.outputs.result).to }}
+  from:
+    description: 'The CSV value of the docker build --cache-from parameter'
+    value: ${{ fromJSON(steps.cache.outputs.result).from }}
+  instance:
+    description: 'The name of the buildx instance'
+    value: ${{ fromJSON(steps.cache.outputs.result).instance }}
+  container:
+    description: 'The name of the buildx/buildkit container'
+    value: buildx_buildkit_${{ fromJSON(steps.cache.outputs.result).instance }}0
+runs:
+  using: composite
+  steps:
+  - id: cache
+    uses: actions/github-script@v6
+    env:
+      INPUTS_NAME: ${{ inputs.name }}
+    with:
+      script: |
+        // NOTE: created here because buildx instances are per user
+        const instance = await exec.getExecOutput('docker buildx create --driver=docker-container --config=/etc/buildkit/buildkitd.toml')
+        await exec.exec(`docker buildx use ${instance.stdout}`)
+        await exec.exec('docker buildx inspect --bootstrap')
+
+        const callerIdentity = await exec.getExecOutput('aws sts get-caller-identity');
+        const arn = JSON.parse(callerIdentity.stdout).Arn;
+        const prefix = process.env.IPDX_S3_BUCKET_PREFIX;
+
+        const name = process.env.INPUTS_NAME || process.env.GITHUB_REPOSITORY;
+
+        const bucket = process.env.IPDX_S3_BUCKET_NAME;
+
+        return {
+          to: `type=s3,mode=max,prefix=${prefix},bucket=${bucket},region=us-east-1,name=${name}`,
+          from: `type=s3,prefix=${prefix},bucket=${bucket},region=us-east-1,name=${name}`,
+          instance: instance.stdout
+        }
+      result-encoding: json
